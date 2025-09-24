@@ -3,6 +3,7 @@ import sys
 import os
 import time
 import glob
+import asyncio
 
 __BASE_PATH = '/config/pyscript/servers'
 __INSTALL_REQUIREMENTS_FILE = 'requirements.txt'
@@ -103,7 +104,7 @@ def __start_server(
     try:
         # Kill any existing instances
         subprocess.run(['pkill', '-f', file], check=False)
-        time.sleep(3)
+        await asyncio.sleep(3)
         
         # Start new instance
         subprocess.Popen([
@@ -126,7 +127,7 @@ def clean_downloads():
 @time_trigger("startup")
 def start_servers_on_boot():
     # Wait for HA to fully start
-    time.sleep(15)
+    await asyncio.sleep(15)
 
     # Install requirements
     __install_ffmpeg_with_update()
