@@ -285,21 +285,17 @@ class __MediaPlayer:
 
 __pytube_media_player_list: dict = {}
 
-import functools
-
 class __MediaPlayerManager:
     @staticmethod
-    async def get_media_player_list_from_cache() -> list:
+    def get_media_player_list_from_cache() -> list:
         try:
-            pattern = os.path.join(__PYTUBE_MEDIA_CACHE_FOLDER, "media_player.*.json")
-            loop = asyncio.get_running_loop()
-            # Esegui glob.glob in un thread, così non blocchi l'event loop
-            matches = await loop.run_in_executor(None, functools.partial(glob.glob, pattern))
-            return [os.path.basename(match)[:-5] for match in matches]
+            pattern = os.path.join(__PYTUBE_MEDIA_CACHE_FOLDER, f"media_player.*.json")
+            matches = glob.glob(pattern)
+            # Remove path and .json extension, keep media_player. prefix
+            return [os.path.basename(match)[:-5] for match in matches]  # Remove last 5 characters (.json)
         except Exception as e:
             log.warning(f"[Pytube][get_cache_file_path] Exception occurred: {e}")
             return []
-
 
     @staticmethod
     def get_all_media_players() -> dict:
