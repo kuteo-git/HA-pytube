@@ -9,7 +9,6 @@ import yt_dlp
 import logging
 import time
 import random
-import asyncio
 from urllib.parse import parse_qs, urlparse
 
 # Flask app setup
@@ -174,7 +173,7 @@ def create_youtube_object_with_retry(video_url, max_retries=MAX_RETRIES, device=
                 # logger.info(f"Retrying YouTube object creation after "
                 #             f"{delay:.2f}s (attempt {attempt + 1}/"
                 #             f"{max_retries})")
-                await asyncio.sleep(delay)
+                time.sleep(delay)
             
             if device:
                 # V2 API with device-specific token
