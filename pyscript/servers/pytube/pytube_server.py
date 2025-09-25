@@ -210,33 +210,99 @@ def download_audio_with_ytdlp(video_id):
     """Download audio using yt-dlp and get info in single call"""
     youtube_url = f"https://youtube.com/watch?v={video_id}"
     
-    ydl_opts = {
-        # Try m4a format which doesn't need conversion
-        'format': '140/bestaudio',
-        'outtmpl': os.path.join(folder_path, '%(title)s_%(id)s.mp3'),
-        'noplaylist': True,
-        'quiet': True,
-        'no_warnings': True,
-        # External downloader
-        'external_downloader': 'aria2c',
-        'downloader_args': {
-            'aria2c': [
-                '-x', '16',
-                '-s', '16',
-                '-k', '1M',
-            ],
-        },
-        # Cookie
-        'cookiefile': 'cookies.txt'
-    }
+    # Try multiple format strategies for Home Assistant compatibility
+    format_strategies = [
+        # Strategy 1: Try specific audio formats we know exist
+        ('233/234', 'Specific m3u8 audio formats'),
+        # Strategy 2: Try any audio format
+        ('bestaudio', 'Best available audio'),
+        # Strategy 3: Try lowest quality video (sometimes works when audio fails)
+        ('worst[height<=360]', 'Low quality video'),
+        # Strategy 4: Just get anything
+        ('worst', 'Worst quality available'),
+        # Strategy 5: No format specification (let yt-dlp decide)
+        (None, 'Default format selection'),
+        # Strategy 6: Try specific video formats that might have audio
+        ('18', 'MP4 360p format'),
+        ('36', '3GP 240p format'),
+    ]
     
-    with yt_dlp.YoutubeDL(ydl_opts) as ydl:
-        info = ydl.extract_info(youtube_url, download=True)
-        cached_mp3_file = find_cached_mp3_file(video_id)
-        if cached_mp3_file and os.path.exists(cached_mp3_file):
-            return cached_mp3_file, info
-        else:
-            raise Exception("Downloaded file not found at expected location")
+    # Check if cookies file exists, if not, don't use it
+    cookie_file = 'cookies.txt'
+    use_cookies = os.path.exists(cookie_file)
+    
+    for strategy, description in format_strategies:
+        ydl_opts = {
+            'outtmpl': os.path.join(folder_path, '%(title)s_%(id)s.%(ext)s'),
+            'noplaylist': True,
+            'quiet': False,  # Enable verbose output for debugging
+            'no_warnings': False,  # Show warnings to understand issues
+            'ignoreerrors': False,
+            'extractaudio': False,  # Don't try to extract audio (no FFmpeg)
+            # Handle signature extraction failures (common in HA)
+            'extractor_args': {
+                'youtube': {
+                    'player_client': ['android', 'web'],  # Try different clients
+                }
+            },
+            # Alternative user agent for better compatibility
+            'http_headers': {
+                'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+            }
+        }
+        
+        # Only add format if specified
+        if strategy:
+            ydl_opts['format'] = strategy
+            
+        # Only add cookies if file exists
+        if use_cookies:
+            ydl_opts['cookiefile'] = cookie_file
+        
+        try:
+            logger.info(f"Trying strategy: {description} (format: {strategy})")
+            
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                # First, just get info without downloading to see what's available
+                logger.info("Getting video info first...")
+                info = ydl.extract_info(youtube_url, download=False)
+                
+                available_formats = info.get('formats', [])
+                logger.info(f"Found {len(available_formats)} available formats")
+                
+                # Now try to download
+                logger.info("Attempting download...")
+                info = ydl.extract_info(youtube_url, download=True)
+                
+                # Find the downloaded file (might not be mp3)
+                pattern = os.path.join(folder_path, f"*_{video_id}.*")
+                matches = glob.glob(pattern)
+                if matches:
+                    downloaded_file = matches[0]
+                    logger.info(f"Downloaded file: {downloaded_file}")
+                    
+                    # Rename to .mp3 for consistency (even if it's not audio)
+                    mp3_file = downloaded_file.rsplit('.', 1)[0] + '.mp3'
+                    if downloaded_file != mp3_file:
+                        os.rename(downloaded_file, mp3_file)
+                        logger.info(f"Renamed to: {mp3_file}")
+                    
+                    return mp3_file, info
+                else:
+                    logger.warning("No files found matching pattern")
+                    
+        except Exception as e:
+            logger.warning(f"Strategy '{description}' failed: {str(e)}")
+            continue
+    
+    # If all strategies fail, provide detailed error
+    error_msg = f"All {len(format_strategies)} download strategies failed for video {video_id}. "
+    error_msg += f"Video URL: {youtube_url}. "
+    error_msg += f"Cookies available: {use_cookies}. "
+    error_msg += "This might be due to: 1) Video is private/deleted, 2) Network restrictions in HA, "
+    error_msg += "3) yt-dlp version compatibility, 4) Missing dependencies in HA container"
+    
+    raise Exception(error_msg)
 
 
 @app.route('/health', methods=['GET'])
