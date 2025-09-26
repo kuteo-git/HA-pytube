@@ -363,7 +363,7 @@ class __MediaService:
         entity_id: str,
         playlist_url: str
     ): 
-        url = f'{__PYTUBE_BASE_URL}/v2/playlist?url={playlist_url}&device={entity_id}'
+        url = f'{__PYTUBE_BASE_URL}/v3/playlist?url={playlist_url}&device={entity_id}'
         try:
             response = task.executor(requests.get, url, headers=__PYTUBE_HEADER, timeout=__PYTUBE_TIME_OUT)
             if response.status_code == 200:
@@ -1014,5 +1014,5 @@ async def pytube_get_status(
 async def pytube_play_playlist_test():
     await pytube_play_playlist(
         entity_id = "media_player.family_room_speaker",
-        playlist_url = "https://youtube.com/playlist?list=PL9bOTJ8DH7Btjles5hZAE5Wd657yQZdJZ"
+        playlist_url = "https://music.youtube.com/playlist?list=PLM8mlc5hM62hfq9WsRCfkiCyFFSHVdLbp&si=0s6Fw9Kp2O_-LXj_"
     )

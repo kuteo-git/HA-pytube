@@ -177,7 +177,7 @@ def create_youtube_object_with_retry(video_url, max_retries=MAX_RETRIES, device=
             
             if device:
                 # V2 API with device-specific token
-                token_file = get_device_token_path(device)
+                # token_file = get_device_token_path(device)  # Currently unused
                 yt = YouTube(
                     video_url,
                     # use_oauth=False,
@@ -326,12 +326,21 @@ def api_info():
             'GET /': 'API information',
             'GET /health': 'Health check',
             'GET /v2/playlist?url=<playlist_url>&device=<device_id>': (
-                'Get simplified playlist info with smart caching'
+                'Get simplified playlist info with smart caching (using pytubefix)'
             ),
             'GET /v2/video/<video_id>?device=<device_id>': (
-                'Get video information with mp3_url if cached'
+                'Get video information with mp3_url if cached (using pytubefix)'
             ),
             'GET /v2/mp3/<video_id>?device=<device_id>': (
+                'Serve cached MP3 file directly'
+            ),
+            'GET /v3/playlist?url=<playlist_url>&device=<device_id>': (
+                'Get simplified playlist info with smart caching (using yt-dlp)'
+            ),
+            'GET /v3/video/<video_id>?device=<device_id>': (
+                'Get video information with mp3_url if cached (using yt-dlp)'
+            ),
+            'GET /v3/mp3/<video_id>?device=<device_id>': (
                 'Serve cached MP3 file directly'
             )
         },
@@ -437,6 +446,161 @@ def get_playlist_videos_v2():
 
     except Exception as e:
         logger.error(f"Error in v2 playlist endpoint: {str(e)}")
+        return jsonify({
+            'error': 'Failed to process playlist',
+            'message': str(e)
+        }), 500
+
+
+@app.route('/v3/playlist', methods=['GET'])
+def get_playlist_videos_v3():
+    """
+    V3: Get videos from a YouTube playlist using yt-dlp instead of pytubefix
+    Expected query parameters: url (YouTube playlist URL), device (device identifier)
+    Returns: JSON array with simplified video information and caching
+    """
+    try:
+        playlist_url = request.args.get('url')
+        device = request.args.get('device')
+        
+        if not playlist_url:
+            return jsonify({
+                'error': 'Missing required parameter: url',
+                'message': 'Please provide a YouTube playlist URL'
+            }), 400
+            
+        if not device:
+            return jsonify({
+                'error': 'Missing required parameter: device',
+                'message': 'Please provide a device identifier'
+            }), 400
+
+        # Extract playlist ID for caching
+        playlist_id = extract_playlist_id(playlist_url)
+        if not playlist_id:
+            return jsonify({
+                'error': 'Invalid playlist URL',
+                'message': 'Could not extract playlist ID from URL'
+            }), 400
+
+        # Ensure cache directory exists
+        if not ensure_directory_exists(folder_path):
+            logger.warning(f"Could not create cache directory: {folder_path}")
+
+        logger.info(
+            f"Processing playlist (v3): {playlist_url} for device: {device}"
+        )
+
+        try:
+            # Use yt-dlp to get playlist information
+            ydl_opts = {
+                'quiet': True,
+                'no_warnings': True,
+                'extract_flat': True,  # Don't download, just get URLs
+                'ignoreerrors': True,  # Continue on errors
+                # Handle signature extraction failures (common in HA)
+                'extractor_args': {
+                    'youtube': {
+                        'player_client': ['android', 'web'],  # Try different clients
+                    }
+                },
+                # Alternative user agent for better compatibility
+                'http_headers': {
+                    'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
+                }
+            }
+
+            # Check if cookies file exists, if not, don't use it
+            cookie_file = 'cookies.txt'
+            use_cookies = os.path.exists(cookie_file)
+            if use_cookies:
+                ydl_opts['cookiefile'] = cookie_file
+
+            with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+                logger.info("Extracting playlist info with yt-dlp...")
+                info = ydl.extract_info(playlist_url, download=False)
+                
+                if not info:
+                    # If no info found, try to return cached data
+                    cached_data = load_playlist_cache(playlist_id)
+                    if cached_data:
+                        logger.info(
+                            f"No info found in API, returning cached data for {playlist_id}"
+                        )
+                        return jsonify(cached_data)
+                    
+                    return jsonify({
+                        'error': 'No playlist information found',
+                        'message': 'The playlist appears to be empty or inaccessible'
+                    }), 404
+
+                # Extract video entries
+                entries = info.get('entries', [])
+                if not entries:
+                    # If no videos found, try to return cached data
+                    cached_data = load_playlist_cache(playlist_id)
+                    if cached_data:
+                        logger.info(
+                            f"No videos found in API, returning cached data for {playlist_id}"
+                        )
+                        return jsonify(cached_data)
+                    
+                    return jsonify({
+                        'error': 'No videos found',
+                        'message': 'The playlist appears to be empty or inaccessible'
+                    }), 404
+
+                # Build response data
+                videos_info = []
+                for entry in entries:
+                    if entry and entry.get('id'):
+                        video_id = entry['id']
+                        video_url = f"https://youtube.com/watch?v={video_id}"
+                        video_info = {
+                            "video_url": video_url,
+                            "video_id": video_id
+                        }
+                        videos_info.append(video_info)
+
+                if not videos_info:
+                    # If no valid videos found, try to return cached data
+                    cached_data = load_playlist_cache(playlist_id)
+                    if cached_data:
+                        logger.info(
+                            f"No valid videos found in API, returning cached data for {playlist_id}"
+                        )
+                        return jsonify(cached_data)
+                    
+                    return jsonify({
+                        'error': 'No valid videos found',
+                        'message': 'The playlist contains no accessible videos'
+                    }), 404
+
+                # Save successful results to cache
+                save_playlist_cache(playlist_id, videos_info)
+                logger.info(
+                    f"Successfully processed {len(videos_info)} videos (v3 yt-dlp)"
+                )
+
+                return jsonify(videos_info)
+
+        except Exception as e:
+            logger.error(f"Error processing playlist with yt-dlp: {str(e)}")
+            # Only if API fails, try to return cached data
+            cached_data = load_playlist_cache(playlist_id)
+            if cached_data:
+                logger.info(
+                    f"yt-dlp API failed, returning cached data for {playlist_id}: {str(e)}"
+                )
+                return jsonify(cached_data)
+            
+            return jsonify({
+                'error': 'Failed to process playlist',
+                'message': str(e)
+            }), 500
+
+    except Exception as e:
+        logger.error(f"Error in v3 playlist endpoint: {str(e)}")
         return jsonify({
             'error': 'Failed to process playlist',
             'message': str(e)
