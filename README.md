@@ -34,6 +34,12 @@ Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
             pyscript:
               allow_all_imports: true
               hass_is_global: true
+            
+            # pyscript logger:
+            logger:
+              default: info
+              logs:
+                custom_components.pyscript: info
             ```
             
     3. **Mushroom**
