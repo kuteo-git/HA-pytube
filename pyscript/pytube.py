@@ -9,9 +9,9 @@ from file_manager import read_file_as_dict, write_dict_to_file, write_file, remo
 from utils import create_date_state
 
 # PUT YOUR CHANGES HERE
-__PYTUBE_BASE_URL = 'http://XX.XX.XX.XX:114'      # Base URL for your PyTube API server
+__PYTUBE_BASE_URL = 'http://127.0.0.1:114'        # Base URL for your PyTube API server
 __PYTUBE_CACHE_DAY = 30                           # Cache duration in days (30 days = 1 month). Songs won't be played until cache expires or playlist completes
-__PYTUBE_TIME_OUT = 60                            # API request timeout in seconds
+__PYTUBE_TIME_OUT = 90                            # API request timeout in seconds
 
 # App config
 __PYTUBE_HEADER = { "Content-Type": "application/json" }

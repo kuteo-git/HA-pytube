@@ -3,7 +3,7 @@
 Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
 
 1. Add-ons installation:
-    1. **Advanced SSH & Web Terminal:**
+    1. (*Optional*) **Advanced SSH & Web Terminal:** 
         1. On HA > Settings > Add-ons
         2. Search for “*Advanced SSH & Web Terminal*”, then select and click the [Install] button to install it
         3. After installing it, go t**o** the Configuration and update your username and password in the SSH script. For example, like this:
@@ -35,7 +35,7 @@ Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
               allow_all_imports: true
               hass_is_global: true
             
-            # pyscript logger:
+            # pyscript logger
             logger:
               default: info
               logs:
@@ -67,8 +67,8 @@ Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
         
 4. Manually update the server’s url for **PytubePlayer:**
     1. On **Studio Code Server**, **g**oto `pyscript` folder→ `pytube.py`
-    2. Find the code below and update your BASE URL which is the same with you HA’s IP Address.
-        1. For example: My HA’s IP Address is `10.25.113.181` → so, the URL should be: `http://10.25.113.181:114` 
+    2. *Optional*: Find the code below and update your BASE URL which is the same with you HA’s IP Address.
+        1. For example: My HA’s IP Address is `10.25.113.181` → so, the URL should be: `http://10.25.113.181:114`
     
     ```jsx
     # PUT YOUR CHANGES HERE
