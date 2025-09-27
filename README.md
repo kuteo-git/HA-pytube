@@ -1,4 +1,4 @@
-# How to install PytubePlayer on Home Assistant
+# How to setup PytubePlayer on Home Assistant
 
 Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
 
