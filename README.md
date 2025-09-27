@@ -93,7 +93,7 @@ Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
                 data:
                   entity_id: media_player.family_room_speaker
                   playlist_url: >-
-                    https://music.youtube.com/playlist?list=PLL6O4RnjOZCVbxKNDznzuBYtI9cQfFmkY
+                    https://music.youtube.com/playlist?list=PLDIoUOhQQPlWc-Kd6TCjTRIl0Z6fSQV0X&si=FrpvLnXQcrVUaaD6
                   is_shuffle: true
                   play_time_check: true
             alias: Pytube. Play playlist
