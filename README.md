@@ -67,9 +67,9 @@ Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
         ├── requirements.txt
         ```
         
-4. Manually update the server’s url for **PytubePlayer:**
+4. *Optional*: Manually update the server’s url for **PytubePlayer:**
     1. On **Studio Code Server**, **g**oto `pyscript` folder→ `pytube.py`
-    2. *Optional*: Find the code below and update your BASE URL which is the same with you HA’s IP Address.
+    2. Find the code below and update your BASE URL which is the same with you HA’s IP Address.
         1. For example: My HA’s IP Address is `10.25.113.181` → so, the URL should be: `http://10.25.113.181:114`
     
     ```jsx
