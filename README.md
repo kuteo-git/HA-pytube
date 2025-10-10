@@ -5,7 +5,7 @@
 Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
 
 1. Add-ons installation:
-    1. (*Optional*) **Advanced SSH & Web Terminal:** 
+    1. (*OPTIONAL*) **Advanced SSH & Web Terminal:** 
         1. On HA > Settings > Add-ons
         2. Search for “*Advanced SSH & Web Terminal*”, then select and click the [Install] button to install it
         3. After installing it, go t**o** the Configuration and update your username and password in the SSH script. For example, like this:
@@ -67,9 +67,10 @@ Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
         ├── requirements.txt
         ```
         
-4. *Optional*: Manually update the server’s url for **PytubePlayer:**
-    1. On **Studio Code Server**, **g**oto `pyscript` folder→ `pytube.py`
-    2. Find the code below and update your BASE URL which is the same with you HA’s IP Address.
+4. *OPTIONAL*: Manually update the server’s url for **PytubePlayer:**
+    1. ⚠️⚠️⚠️ THE PORT SHOULD BE `114` -- IT'S NOT YOUR HOME ASSISTANT'S PORT ⚠️⚠️⚠️
+    2. On **Studio Code Server**, **g**oto `pyscript` folder→ `pytube.py`
+    3. Find the code below and update your BASE URL which is the same with you HA’s IP Address.
         1. For example: My HA’s IP Address is `10.25.113.181` → so, the URL should be: `http://10.25.113.181:114`
     
     ```jsx
@@ -79,7 +80,7 @@ Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
     __PYTUBE_TIME_OUT = 60                            # API request timeout in seconds
     ```
     
-5. Last step:
+6. Last step:
     1. Some scripts: Create the script to make the automations
         1. Play script:
             1. `entity_id`: Your media player id
