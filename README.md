@@ -1,5 +1,7 @@
 ![CleanShot 2025-09-27 at 15 52 41](https://github.com/user-attachments/assets/da8e10df-a2df-4d60-ba6c-19bc88592ec4)
 
+⚠️⚠️⚠️ THE PYTUBE_SERVER'S PORT SHOULD BE `114` -- IT'S NOT YOUR HOME ASSISTANT'S PORT ⚠️⚠️⚠️
+
 # How to setup PytubePlayer on Home Assistant
 
 Video: https://www.youtube.com/watch?v=LMxd6fsEv9c
